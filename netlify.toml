@@ -1,0 +1,13 @@
+# Configuração da Netlify: como montar o site a cada mudança no GitHub
+[build]
+  command = "pip install -r requirements.txt && python build.py"
+  publish = "_site"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+# Página de erro personalizada
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
