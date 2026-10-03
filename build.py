@@ -82,14 +82,16 @@ MENU_JS = '''<script>
 (function () {
   var btn = document.getElementById("menu-btn"), nav = document.getElementById("nav");
   if (!btn || !nav) return;
-  btn.addEventListener("click", function () {
-    var open = btn.getAttribute("aria-expanded") === "true";
-    btn.setAttribute("aria-expanded", String(!open));
-    nav.classList.toggle("open", !open);
-  });
-  nav.addEventListener("click", function (e) {
-    if (e.target.tagName === "A") { btn.setAttribute("aria-expanded", "false"); nav.classList.remove("open"); }
-  });
+  function setOpen(open) {
+    btn.setAttribute("aria-expanded", String(open));
+    btn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+    nav.classList.toggle("open", open);
+    document.body.classList.toggle("menu-open", open);
+  }
+  btn.addEventListener("click", function () { setOpen(btn.getAttribute("aria-expanded") !== "true"); });
+  nav.addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
+  window.addEventListener("resize", function () { if (window.innerWidth >= 1024) setOpen(false); });
 })();
 </script>'''
 
@@ -108,9 +110,9 @@ def header(prefix, current):
       <a href="{home}#metodologia">Metodologia</a>
       <a href="{prefix}blog/index.html"{cur("blog")}>Insights</a>
       <a href="{home}#quem-somos">Quem somos</a>
+      <a href="{home}#contato">Contato</a>
     </nav>
     <div class="header-actions">
-      <a class="btn sm" href="{home}#contato">Torne-se cliente</a>
       <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu"><span></span></button>
     </div>
   </div>
@@ -252,8 +254,8 @@ def home():
       <h1 class="display">A inteligência por trás das decisões de <span class="hl">empresas e governos locais.</span></h1>
       <p class="lede">Pesquisa própria, estrutura de dados e orientação especializada em um só parceiro, para que líderes decidam <em>com evidência, rapidez e menos risco</em>.</p>
       <div class="hero-actions">
-        <a class="btn solid" href="#contato">Torne-se cliente <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="link" href="#insights">Acesse os insights ↓</a>
+        <a class="btn solid" href="#insights">Leia os insights <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="link" href="#metodologia">Conheça a metodologia ↓</a>
       </div>
     </div>
     <div class="hero-visual">
@@ -389,20 +391,28 @@ def home():
             <span class="chip">Exemplo</span>
           </div>
           <div class="ficha-body">
-            <h3>Atualidade dos dados publicados</h3>
+            <h3>Índice de Qualidade da Base (IQB)</h3>
             <dl>
               <div><dt>Camada</dt><dd><strong>Qualidade do dado</strong></dd></div>
-              <div><dt>Definição</dt><dd>Percentual de bases publicadas dentro do prazo de atualização declarado.</dd></div>
-              <div><dt>Fórmula</dt><dd class="formula">bases atualizadas no prazo ÷ bases publicadas × 100</dd></div>
-              <div><dt>Fonte</dt><dd>Catálogo de dados + registro de cargas</dd></div>
-              <div><dt>Dono</dt><dd>Área responsável pelo portal</dd></div>
-              <div><dt>Periodicidade</dt><dd>Mensal</dd></div>
-              <div><dt>Meta</dt><dd><strong>≥ 95%</strong><div class="meta-bar" aria-hidden="true"><i></i></div></dd></div>
-              <div><dt>Decisão que apoia</dt><dd>Quais bases recebem automação de carga primeiro.</dd></div>
+              <div><dt>Definição</dt><dd>Mede se cada base chega no prazo, no layout e na sintaxe combinados, e quanto ela precisou ser corrigida antes de ser usada.</dd></div>
+              <div><dt>Componentes</dt><dd>
+                <table class="comp">
+                  <tr><th scope="row">Prazo</th><td>chegou na data combinada? (sim = 1, não = 0)</td><td class="v">1</td></tr>
+                  <tr><th scope="row">Layout</th><td>mesmas colunas, nomes e ordem do dicionário? (1 ou 0)</td><td class="v">1</td></tr>
+                  <tr><th scope="row">Sintaxe</th><td>% de registros com tipos e formatos válidos (datas, CNPJ, valores)</td><td class="v">98%</td></tr>
+                  <tr><th scope="row">Inferência</th><td>% de valores corrigidos, imputados ou deduzidos antes do uso</td><td class="v">6%</td></tr>
+                </table>
+              </dd></div>
+              <div><dt>Fórmula</dt><dd class="formula">IQB = Prazo × Layout × Sintaxe × (1 − Inferência) × 100<br><span class="calc">1 × 1 × 0,98 × 0,94 × 100 = <strong>92</strong></span></dd></div>
+              <div><dt>Fonte</dt><dd>Dicionário de dados, log de cargas e registro de correções do pipeline</dd></div>
+              <div><dt>Dono</dt><dd>Área responsável pela base, com apoio do time de dados</dd></div>
+              <div><dt>Periodicidade</dt><dd>A cada carga, consolidado por mês</dd></div>
+              <div><dt>Meta</dt><dd><strong>≥ 90 pontos</strong> · resultado do exemplo: 92<div class="meta-bar" aria-hidden="true"><i></i></div></dd></div>
+              <div><dt>Decisão que apoia</dt><dd>Quais fornecedores precisam de acordo de layout e onde automatizar a validação antes de publicar.</dd></div>
             </dl>
           </div>
         </article>
-        <p class="ficha-note">Todo indicador que entregamos tem uma ficha assim: definição única, fórmula, fonte, dono, periodicidade, meta e a decisão que ele apoia.</p>
+        <p class="ficha-note">Atraso ou layout quebrado zeram o índice: uma base fora do combinado não pode ser usada como se estivesse certa. Todo indicador que entregamos tem uma ficha assim, com definição, fórmula, fonte, dono, periodicidade, meta e a decisão que ele apoia.</p>
       </div>
     </div>
   </div>
@@ -539,8 +549,8 @@ def home():
   <div class="wrap contact-grid">
     <div style="display:grid;gap:18px;align-content:start">
       <p class="eyebrow m">Contato</p>
-      <h2 class="display">Torne-se cliente</h2>
-      <p class="lede">Conte o desafio da sua organização. Respondemos em até dois dias úteis com uma proposta de discovery.</p>
+      <h2 class="display">Vamos conversar?</h2>
+      <p class="lede">Tem uma pergunta, uma ideia de pesquisa ou um desafio com dados? Escreva para nós. Lemos e respondemos todas as mensagens.</p>
       <div class="mail"><code id="email">{EMAIL}</code><button type="button" id="copy">Copiar</button></div>
     </div>
     <form id="form" novalidate>
